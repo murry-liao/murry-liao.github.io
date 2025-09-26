@@ -96,3 +96,26 @@ footer {
     margin-top: 1rem;
     margin-bottom: 1rem; 
 }
+
+/* 给 publication 列表加上数字序号，替换掉黑点 */
+#Listofpublication .section-content {
+  counter-reset: pubcounter;   /* 重置计数器 */
+  list-style: none;            /* 去掉默认的黑点 */
+  padding-left: 0;
+}
+
+#Listofpublication .section-content li {
+  counter-increment: pubcounter;  /* 每个 li 自增 */
+  position: relative;
+  margin-bottom: 12px;
+  padding-left: 28px;             /* 给数字预留空间 */
+}
+
+#Listofpublication .section-content li::before {
+  content: counter(pubcounter) "."; /* 输出 1. 2. 3. ... */
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: bold;
+  color: #333;
+}
