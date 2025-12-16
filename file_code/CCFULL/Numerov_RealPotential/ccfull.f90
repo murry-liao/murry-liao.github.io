@@ -99,6 +99,7 @@ Contains
 
     Open(10, File='ccfull.inp', Status = 'Unknown')
     Open(20, File='sigma.dat',  Status = 'Unknown')
+    write(20,'(4A15)') 'E',  'sigma',  '<L>',  'P (L = 0)'
     Open(30, File='Output.dat', Status = 'Unknown')
     Read(10,*)Apro, Zpro, Atar, Ztar
     Read(10,*)R0P, IVIBROTP, R0T, IVIBROTT
@@ -309,12 +310,6 @@ Contains
     Allocate(CPOTH(Nlevelmax,Nlevelmax))
 
     Call Output_information()
-
-
-    !Nx = R_iterat
-    !Nx_cc = Nlevel * Nx
-    !Nx1 = Nx_cc + Nlevel
-    !Nx2 = Nx_cc + 2 * Nlevel
 
   End Subroutine Initialize_CCFull
 
