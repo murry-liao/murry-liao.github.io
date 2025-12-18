@@ -109,6 +109,7 @@ Contains
 
     Open(10, File='ccfull.inp', Status = 'Unknown')
     Open(20, File='sigma.dat',  Status = 'Unknown')
+    write(20,'(4A15)') 'E',  'sigma',  '<L>',  'P (L = 0)'
     Open(30, File='Output.dat', Status = 'Unknown')
     Open(40, File='Wavefunction_Db.dat', Status = 'Unknown')
     Read(10,*)Apro, Zpro, Atar, Ztar
@@ -2709,75 +2710,15 @@ Program CCFull_Main
       If(sigma - s0 < s0*1.d-4)Exit 
     End Do
 
-
     if (sigma < 0.01D0) then
-        write(*,'(A,F8.3,A,E15.5,A,E15.5,A,E15.5)') ' E = ', E, ' MeV,   Sigma_true = ', sigma, ' mb, <P> = ', P_0
-        write(20,'(F8.3,E15.5,E15.5)')E, sigma,  P_0
+        write(*,'(A,F8.3,A,E15.5,A,F8.5,A,E15.5)') ' E = ', E, ' MeV,   Sigma = ', sigma, ' mb, <L> = ', spin / sigma, ' hbar, <P_0> = ', P_0
+        write(20,'(F15.5,E15.5,F15.5,E15.5)') E,  sigma,  spin / sigma,  P_0
     else
-        write(*,'(A,F8.3,A,F15.5,A,F15.5,A,E15.5)') ' E = ', E, ' MeV,   Sigma_true = ', sigma, ' mb, <P> = ', P_0
-        write(20,'(F8.3,F15.5,F15.5)')E, sigma,  P_0
+        write(*,'(A,F8.3,A,F15.5,A,F8.5,A,E15.5)') ' E = ', E, ' MeV,   Sigma = ', sigma, ' mb, <L> = ', spin / sigma, ' hbar, <P_0> = ', P_0
+        write(20,'(4F15.5)') E,  sigma,  spin / sigma,  P_0
     end if
-
   End Do
 
   Print *, "Program completed successfully."
 
 End Program CCFull_Main
-
-
-
-
-!fortran70
-!       55.00000    0.97449E-02        5.87031
-!       56.00000        0.05489        5.94333
-!       57.00000        0.28583        6.05134
-!       58.00000        1.36500        6.19272
-!       59.00000        5.84375        6.40451
-!       60.00000       20.59856        6.86092
-!       61.00000       52.14435        7.81887
-!       62.00000       94.62477        9.18913
-!       63.00000      139.58988       10.65032
-!       64.00000      185.55960       11.98384
-!       65.00000      234.04527       13.13045
-!       66.00000      283.93527       14.18620
-!       67.00000      333.25670       15.21143
-!       68.00000      381.19965       16.20589
-!       69.00000      427.60179       17.16365
-!       70.00000      472.46037       18.08247
-
-
-!fortran90
-! E =   55.000 MeV,   Sigma =     0.97448E-02 mb, <L> =  5.87031 hbar, <P_0> =     0.22629E-03
-! E =   56.000 MeV,   Sigma =         0.05489 mb, <L> =  5.94333 hbar, <P_0> =     0.12592E-02
-! E =   57.000 MeV,   Sigma =         0.28583 mb, <L> =  6.05134 hbar, <P_0> =     0.64144E-02
-! E =   58.000 MeV,   Sigma =         1.36500 mb, <L> =  6.19272 hbar, <P_0> =     0.29721E-01
-! E =   59.000 MeV,   Sigma =         5.84375 mb, <L> =  6.40451 hbar, <P_0> =     0.11981E+00
-! E =   60.000 MeV,   Sigma =        20.59856 mb, <L> =  6.86092 hbar, <P_0> =     0.35491E+00
-! E =   61.000 MeV,   Sigma =        52.14434 mb, <L> =  7.81887 hbar, <P_0> =     0.62839E+00
-! E =   62.000 MeV,   Sigma =        94.62476 mb, <L> =  9.18913 hbar, <P_0> =     0.75138E+00
-! E =   63.000 MeV,   Sigma =       139.58987 mb, <L> = 10.65032 hbar, <P_0> =     0.79530E+00
-! E =   64.000 MeV,   Sigma =       185.55959 mb, <L> = 11.98384 hbar, <P_0> =     0.86342E+00
-! E =   65.000 MeV,   Sigma =       234.04527 mb, <L> = 13.13045 hbar, <P_0> =     0.94486E+00
-! E =   66.000 MeV,   Sigma =       283.93526 mb, <L> = 14.18620 hbar, <P_0> =     0.98364E+00
-! E =   67.000 MeV,   Sigma =       333.26115 mb, <L> = 15.21129 hbar, <P_0> =     0.99507E+00
-! E =   68.000 MeV,   Sigma =       381.21016 mb, <L> = 16.20563 hbar, <P_0> =     0.99820E+00
-! E =   69.000 MeV,   Sigma =       427.61803 mb, <L> = 17.16333 hbar, <P_0> =     0.99921E+00
-! E =   70.000 MeV,   Sigma =       472.48080 mb, <L> = 18.08211 hbar, <P_0> =     0.99962E+00
-
-!fortran90_DBM_numerov
-! E =   55.000 MeV,   Sigma_true =     0.98093E-02 mb, <P> =     0.22705E-03
-! E =   56.000 MeV,   Sigma_true =         0.05497 mb, <P> =         0.00125
-! E =   57.000 MeV,   Sigma_true =         0.28441 mb, <P> =         0.00635
-! E =   58.000 MeV,   Sigma_true =         1.35333 mb, <P> =         0.02943
-! E =   59.000 MeV,   Sigma_true =         5.80532 mb, <P> =         0.11957
-! E =   60.000 MeV,   Sigma_true =        20.57591 mb, <P> =         0.35676
-! E =   61.000 MeV,   Sigma_true =        52.21295 mb, <P> =         0.63023
-! E =   62.000 MeV,   Sigma_true =        94.68164 mb, <P> =         0.75072
-! E =   63.000 MeV,   Sigma_true =       139.56203 mb, <P> =         0.79439
-! E =   64.000 MeV,   Sigma_true =       185.47784 mb, <P> =         0.86342
-! E =   65.000 MeV,   Sigma_true =       233.93054 mb, <P> =         0.94444
-! E =   66.000 MeV,   Sigma_true =       283.76725 mb, <P> =         0.98280
-! E =   67.000 MeV,   Sigma_true =       333.04373 mb, <P> =         0.99440
-! E =   68.000 MeV,   Sigma_true =       380.95965 mb, <P> =         0.99777
-! E =   69.000 MeV,   Sigma_true =       427.34838 mb, <P> =         0.99890
-! E =   70.000 MeV,   Sigma_true =       472.20209 mb, <P> =         0.99936

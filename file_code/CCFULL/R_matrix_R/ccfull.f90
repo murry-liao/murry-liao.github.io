@@ -1,9 +1,11 @@
 !'''
-!@File    :   CC_python.py Ec_version solved by modified Numerove or Discrete Basis method 
-!@Time    :   2025/06/22 
+!@File    :   CC_python.py Ec_version solved by R-matrix method with Real potential
+!@Time    :   2025/12/18 
 !@Author  :   Liao ZeHong, Kouichi Hagino
 !@Version :   1.0
 !@Contact :   liaozh26@mail2.sysu.edu.cn
+!Complie command: gfortran  ccfull.f90 
+!if one want to use lapack: gfortran  ccfull.f90  -llapack -lblas -o solve
 !'''
 
 
@@ -102,6 +104,7 @@ Contains
 
     Open(10, File='ccfull.inp', Status = 'Unknown')
     Open(20, File='sigma.dat',  Status = 'Unknown')
+    write(20,'(4A15)') 'E',  'sigma',  '<L>',  'P (L = 0)'
     Open(30, File='Output.dat', Status = 'Unknown')
     Read(10,*)Apro, Zpro, Atar, Ztar
     Read(10,*)R0P, IVIBROTP, R0T, IVIBROTT
@@ -294,18 +297,17 @@ Contains
     Allocate(erotp(0:Nlevelmax))
     Allocate(eps(0:Nlevelmax))
     Allocate(xgauss(Nbase), wgauss(Nbase))
-    !Allocate(H(Nx_cc,Nx_cc))
-    !Allocate(psi(Nx2,Nx1))
-    !Allocate(psi0(Nx2))
-    !Allocate(ech(Nlevel))
 
 
     Call Read_Input()
 
     Call PotShape(0, R_barrier, V_barrier, curv, R_bottom, V_bottom)
-    R_min = 0.d0
+    
+    R_min = R_bottom
+
+    !R_min = 0.d0
     R_iterat = int((R_max - R_min) / dr)
-    !R_min = R_bottom
+    
     R_max = R_min + dr * R_iterat
     t = Hbar**2 / (2 * ReduceMass * dr**2)
     
@@ -1050,59 +1052,45 @@ subroutine matinv_R(nlmax, nmax, cc, d)
 
 end subroutine matinv_R
 
+subroutine matinv_lapack(n, A, Ainv)
+  implicit none
+  integer, intent(in) :: n
+  complex*16, intent(in) :: A(n,n)
+  complex*16, intent(out) :: Ainv(n,n)
 
-subroutine matinv123(n, A, Ainv)
-    implicit none
-    integer, intent(in) :: n
-    complex*16, intent(in) :: A(n,n)
-    complex*16, intent(out) :: Ainv(n,n)
-    integer :: info
+  integer :: info, lwork
+  integer, allocatable :: ipiv(:)
+  complex*16, allocatable :: work(:)
+  complex*16 :: tmp(n,n)
 
-    integer :: i, j, k
-    complex*16 :: tmp
+  tmp = A
+  Ainv = (0.0d0, 0.0d0)
 
-    ! 增广矩阵 aug(n, 2*n)：左边 A，右边 I
-    complex*16 :: aug(n, 2*n)
+  allocate(ipiv(n))
 
-    ! ---- 初始化增广矩阵 ----
-    aug(:,1:n) = A(:,:)
-    aug(:,n+1:2*n) = (0.d0, 0.d0)
-    do i = 1, n
-        aug(i,n+i) = (1.d0, 0.d0)
-    end do
+  ! LU 
+  call zgetrf(n, n, tmp, n, ipiv, info)
+  if (info /= 0) then
+    print *, "Error in zgetrf: info = ", info
+    stop
+  end if
 
-    ! ---- Gauss–Jordan 消元 ----
-    do i = 1, n
 
-        ! 检查主对角是否为零（近似）
-        if (abs(real(aug(i,i))) + abs(aimag(aug(i,i))) < 1.d-30) then
-            info = i
-            return
-        end if
+  lwork = n * n
+  allocate(work(lwork))
 
-        ! 1. 主行归一化
-        tmp = aug(i,i)
-        do k = 1, 2*n
-            aug(i,k) = aug(i,k) / tmp
-        end do
 
-        ! 2. 消去其它行的第 i 列
-        do j = 1, n
-            if (j /= i) then
-                tmp = aug(j,i)
-                do k = 1, 2*n
-                    aug(j,k) = aug(j,k) - tmp * aug(i,k)
-                end do
-            end if
-        end do
+  call zgetri(n, tmp, n, ipiv, work, lwork, info)
+  if (info /= 0) then
+    print *, "Error in zgetri: info = ", info
+    stop
+  end if
 
-    end do
+  Ainv = tmp
 
-    ! ---- 取右半部分作为逆矩阵 ----
-    Ainv(:,:) = aug(:, n+1:2*n)
-    info = 0
-end subroutine matinv123
-
+  deallocate(ipiv)
+  deallocate(work)
+end subroutine matinv_lapack
 
 Real(8) Function fact(n)
     Implicit none
@@ -2124,6 +2112,7 @@ Subroutine Numerov(P)
 
 End Subroutine Numerov
 
+
 Subroutine Sub_R_matrix(R_matrix)
   Use ccfull_initialization_mod
   Implicit None
@@ -2134,30 +2123,46 @@ Subroutine Sub_R_matrix(R_matrix)
   Integer ::  n, m, ch_i, ch_j, row, col, Ntot, i
   Real(8) ::  a, phi_i, phi_j, x_n, x_m
   Real(8) ::  V, W, r_point
+  Real(8) ::  Delta_r
+
   complex*16 :: ai
-  complex*16, Allocatable :: c(:,:), cinv(:,:)
+  complex*16, Allocatable :: c(:,:), cinv(:,:), k_abs(:)
   complex*16 :: total_sum
+
+  Complex*16 :: k_loc
+  Real(8) :: E_local
+  Real(8) :: phi_min_n, phi_min_m
+
+
   external V, W
   
+
   ai=(0.d0,1.d0)
   a = R_max
+  Delta_r = R_max - R_min
   Ntot = Nlevel * Nbase
   Allocate(c(Ntot, Ntot))
   Allocate(cinv(Ntot, Ntot))
+  Allocate(k_abs(Nlevel))
   c = 0.d0
-  Do ch_i = 1, Nlevel
-    Do ch_j = 1, Nlevel
 
-      Do n = 1, Nbase
-        Do m = 1, Nbase
+  CPOT0 = 0.d0
+  Call coupled_matrix(R_min, CPOT0)
 
-          x_n = xgauss(n)
-          x_m = xgauss(m)
 
-          r_point = a * x_n
-          CPOT0 = 0.d0
-          Call coupled_matrix(r_point, CPOT0)
+  Do n = 1, Nbase
+    x_n = xgauss(n)
+    r_point = R_min + Delta_r * x_n
+    CPOT0 = 0.d0
+    Call coupled_matrix(r_point, CPOT0)
+    Do m = 1, Nbase
+      x_m = xgauss(m)
 
+      phi_min_n = (-1.d0)**(n+1) * sqrt(xgauss(n)*(1.d0-xgauss(n))*Delta_r) / (xgauss(n)*Delta_r)
+      phi_min_m = (-1.d0)**(m+1) * sqrt(xgauss(m)*(1.d0-xgauss(m))*Delta_r) / (xgauss(m)*Delta_r)
+
+      Do ch_i = 1, Nlevel
+        Do ch_j = 1, Nlevel
 
           ! the idex of the matrix element
           row = (ch_i - 1) * Nbase + n
@@ -2166,18 +2171,42 @@ Subroutine Sub_R_matrix(R_matrix)
           !Diagonal Blocks
           If (ch_i == ch_j) Then
             If (n == m) Then
-              !kinetic energy and Bloch operator
-              c(row, col) = Hbar**2. / 2.d0 / ReduceMass / a**2/ x_n / (1.d0 - x_n) &
-                          * ((4.*dble(Nbase)**2 + 4.*Nbase + 3.)/3. - (6.d0*x_n - 1.d0)/(3.d0*x_n*(1.d0-x_n)))
-              c(row, col) = c(row, col) - E + V(R_max*x_n, L_i) - ai*W(R_max*x_n)
+              !kinetic energy 
+              c(row,col) = Hbar**2 / (2.d0*ReduceMass) &
+                         * (dble(Nbase)**2 + dble(Nbase) + 6.d0 - 2.d0/(x_n*(1.d0 - x_n))) &
+                         / (3.d0 * Delta_r**2 * x_n * (1.d0 - x_n))
+
+              c(row, col) = c(row, col) - E + V(R_min + Delta_r * x_n, L_i) ! - ai*W(R_max*x_n)
             Else
-              !kinetic energy and Bloch operator
-              c(row, col) =  Hbar**2. / (2.d0 * ReduceMass * a) &
-                          * 1.d0 / a * (-1.d0)**(n+m)           &
-                          / sqrt(x_n*x_m*(1.d0-x_n)*(1.d0-x_m)) &
-                          * (dble(Nbase)**2 + Nbase + 1.d0 - 1.d0/(1.d0-x_n) - 1.d0/(1.d0-x_m) &
-                          + (x_n + x_m - 2.d0*x_n*x_m)/(x_n - x_m)**2)
+              !kinetic energy
+              c(row,col) = Hbar**2 / (2.d0*ReduceMass)  &
+                         * (-1.d0)**(n+m) / Delta_r**2 * Sqrt(x_m*(1.d0-x_m)/x_n/(1.d0-x_n))&
+                         * (2.d0*x_n*x_m + 3*x_n - x_m - 4*x_n**2) &
+                         / (x_n*(1.d0 - x_n)*(x_m - x_n)**2)
+
             End If
+            !Bloch operator
+            c(row, col) = c(row, col) + Hbar**2 / (2.d0*ReduceMass)* (-1.d0)**(n+m) / Delta_r**2 &
+                        * Sqrt(x_n*x_m/(1.d0-x_n)/(1.d0-x_m)) &
+                        * (dble(Nbase)*(dble(Nbase) + 1) - 1.d0/(1.d0-x_m))
+
+            c(row, col) = c(row, col) - Hbar**2 / (2.d0*ReduceMass) * (-1.d0)**(n+m) / Delta_r**2 &
+                        * Sqrt((1.d0-x_n)*(1.d0-x_m)/x_n/x_m) &
+                        * (-dble(Nbase)*(dble(Nbase) + 1) + 1.d0/x_m)
+
+          If (ch_i == ch_j) Then
+             ! Energy on the R_min 
+             E_local = E - V(R_min, L_i) - CPOT0(ch_i, ch_i)
+             
+             ! wave number on the R_min
+             k_loc = Sqrt(DCMPLX(2.d0 * ReduceMass * E_local, 0.d0)) / Hbar
+             
+             ! -i * (hbar^2/2u) * k * phi_n * phi_m
+             c(row, col) = c(row, col) - ai * (Hbar**2 / (2.d0*ReduceMass)) * k_loc * phi_min_n * phi_min_m
+          End If
+
+
+
           End If
 
           !Off-Diagonal Blocks
@@ -2194,8 +2223,7 @@ Subroutine Sub_R_matrix(R_matrix)
   End Do
     
     !Call matinv_R(Ntot, Ntot, c, cinv)
-    !Call matinv_lapack(Ntot, c, cinv)
-    Call matinv123(Ntot, c, cinv)
+    Call matinv_lapack(Ntot, c, cinv)
 
   R_matrix = 0.d0
   Do ch_i = 1, Nlevel
@@ -2206,10 +2234,9 @@ Subroutine Sub_R_matrix(R_matrix)
            row = (ch_i - 1) * Nbase + n
            col = (ch_j - 1) * Nbase + m
            
-           !phi_i = (-1)**(Nbase + n) / Sqrt(a * xgauss(n) * (1.d0 - xgauss(n)))
-           !phi_j = (-1)**(Nbase + m) / Sqrt(a * xgauss(m) * (1.d0 - xgauss(m)))
-           phi_i = (-1)**(n) / Sqrt(a * xgauss(n) * (1.d0 - xgauss(n)))
-           phi_j = (-1)**(m) / Sqrt(a * xgauss(m) * (1.d0 - xgauss(m)))
+           phi_i = (-1)**(Nbase + n)* sqrt(xgauss(n)*(1-xgauss(n))*Delta_r)/(a-xgauss(n)*Delta_r - R_min)
+           phi_j = (-1)**(Nbase + m)* sqrt(xgauss(m)*(1-xgauss(m))*Delta_r)/(a-xgauss(m)*Delta_r - R_min)
+
            
            R_matrix(ch_i, ch_j) = R_matrix(ch_i, ch_j) + &
                                       (Hbar**2 / (2.d0 * ReduceMass * a)) * &
@@ -2229,37 +2256,36 @@ Subroutine Sub_S_matrix(P)
   Use ccfull_initialization_mod
   
   Implicit None
-  Real(8), Intent(Out) :: P  ! 输出: 融合/吸收概率
-  
-  ! 局部变量定义
+  Real(8), Intent(Out) :: P  
   real(8) :: fcw_val, gcw_val, fpcw_val, gpcw_val
   integer :: iexp_val
   Integer :: i, j, ch, io
   Real(8) :: a, ak_ch, rho, eta_ch, E_ch, k, kk
-  Real(8) :: qk_vec(Nlevel) ! 存储波数
-  
-  ! 矩阵变量
+  Real(8) :: qk_vec(Nlevel), V
+
   Complex*16 :: R_mat(Nlevel, Nlevel)
   Complex*16 :: S_mat(Nlevel, Nlevel)
   Complex*16 :: Z_in(Nlevel, Nlevel), Z_out(Nlevel, Nlevel)
-  Complex*16 :: Z_out_inv(Nlevel, Nlevel) ! Z_out 的逆矩阵
+  Complex*16 :: Z_out_inv(Nlevel, Nlevel)
   
-  ! 波函数向量
   Complex*16 :: H_plus_vec(Nlevel), dH_plus_vec(Nlevel)   ! Outgoing
   Complex*16 :: H_minus_vec(Nlevel), dH_minus_vec(Nlevel) ! Incoming
   
   Complex*16 :: ai
-  
+  external V
   ai = (0.d0, 1.d0)
   a = R_max
 
   ! 1. R_matrix (Nlevel x Nlevel)
   Call Sub_R_matrix(R_mat)
+
+
   Call coupled_matrix(R_max, CPOT0)
   ! 2. Coulomb wavfunction (external function)
   Do ch = 1, Nlevel
-     
+
     E_ch = E - CPOT0(ch,ch)
+    !E_ch = E -  V(R_min, L_i) - CPOT0(ch,ch)
     ak_ch = sqrt(2.d0 * ReduceMass * E_ch / hbar**2)
     qk_vec(ch) = ak_ch
     rho = ak_ch * a
@@ -2316,14 +2342,14 @@ Subroutine Sub_S_matrix(P)
      End Do
   End Do
   
-  ! 6. 计算融合/反应概率 P
+  ! 6. 
   ! P = 1 - Sum(|S_1j|^2)
   P = 1.d0
   Do io = 1, Nlevel
       If (E - eps(io) .lt. 0.d0) Cycle
       k = sqrt((2.d0 * ReduceMass / Hbar**2 * (E - eps(io))))
       kk = sqrt(2.d0 * ReduceMass / Hbar**2 * E)
-      P = P - Abs(S_mat(1, io))**2 !* k / kk
+      P = P - Abs(S_mat(1, io))**2 
 
   End Do
 
@@ -2331,50 +2357,8 @@ Subroutine Sub_S_matrix(P)
 
 End Subroutine Sub_S_matrix
 
-Subroutine Sub_S_matrix_1ch(P)
-  Use ccfull_initialization_mod
-  
-  Implicit None
-  Real(8), Intent(Out) :: P
-  real(8), dimension(0:200) :: fcw, gcw, fpcw, gpcw
-  real(8), dimension(0:200) :: sigmad
-  integer, dimension(0:200) :: iexp
-  Integer ::  i, j, lc
-  Real(8) ::  a, ak, rho, eta
-  Complex*16  ::  R(Nlevel, Nlevel), S
-  complex*16  ::  ai, R_matrix
-  complex*16  ::  H_in, H_out, dH_in, dH_out
-  ai=(0.d0,1.d0)
-  Call Sub_R_matrix(R)
-  R_matrix = R (1,1)
-  Do lc = 0, 200
-    fcw(lc)   = 0.0d0
-    gcw(lc)   = 0.0d0
-    fpcw(lc)  = 0.0d0
-    gpcw(lc)  = 0.0d0
-    sigmad(lc) = 0.0d0
-    iexp(lc)   = 0
-  End Do
-  a = R_max
-  !Coulomb wavefunction
-  ak  = sqrt(2.d0 * ReduceMass * E / hbar**2) 
-  rho = ak * R_max
-  eta = (Zpro * Ztar / 137.d0) * Sqrt(ReduceMass / (2.d0 * E))
-  Call myCOULFG(L_i*1.d0, eta, rho, fcw(L_i), fpcw(L_i), gcw(L_i), gpcw(L_i), iexp(L_i))
-  H_out     = gcw(L_i) + ai*fcw(L_i)
-  H_in      = gcw(L_i) - ai*fcw(L_i)
-  dH_out    = ak*(gpcw(L_i)  + ai*fpcw(L_i))
-  dH_in     = ak*(gpcw(L_i)  - ai*fpcw(L_i))
-
-  ! there is some error for fpcw
-
-  S = (H_in - R_matrix * a * dH_in)/(H_out - R_matrix * a * dH_out)
-  !write(22,*)' E= ', E, ' l= ', L_i,'  rmat= ', R_matrix, ' Smat= ', S
 
 
-  P = 1.d0 - Abs(S)**2
-
-End Subroutine Sub_S_matrix_1ch
 
 SUBROUTINE gaussh(n, x, w)
   !---------------------------------------------------------
@@ -2995,10 +2979,8 @@ Program CCFull_Main
       End If
 
       If(sigma - s0 < s0*1.d-4)Exit 
-      !Write(*,*)E, L_i, P
 
     End Do
-    !stop
 
     if (sigma < 0.01D0) then
         write(*,'(A,F8.3,A,E15.5,A,F8.5,A,E15.5)') ' E = ', E, ' MeV,   Sigma = ', sigma, ' mb, <L> = ', spin / sigma, ' hbar, <P_0> = ', P_0
