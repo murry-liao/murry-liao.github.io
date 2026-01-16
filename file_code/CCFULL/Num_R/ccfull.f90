@@ -301,7 +301,7 @@ Contains
     R_max = R_bottom + dr * R_iterat
     t = Hbar**2 / (2 * ReduceMass * dr**2)
     
-    Allocate(CPOT(Nlevelmax,Nlevelmax,R_iterat+2))
+    Allocate(CPOT(Nlevelmax,Nlevelmax,0:R_iterat+2))
     Allocate(CPOT0(Nlevelmax,Nlevelmax))
     Allocate(CPOTH(Nlevelmax,Nlevelmax))
 
