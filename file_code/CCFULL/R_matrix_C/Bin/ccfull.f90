@@ -1,10 +1,11 @@
 !'''
-!@File    :   CC_python.py Ec_version solved by modified Numerove method 
-!@Time    :   2025/06/22 
+!@File    :   CC_python.py Ec_version solved by R-matrix method 
+!@Time    :   2025/12/18 
 !@Author  :   Liao ZeHong, Kouichi Hagino
 !@Version :   1.0
 !@Contact :   liaozh26@mail2.sysu.edu.cn
-!gfortran ccfull.f90
+!Complie command: gfortran  ccfull.f90 
+!if one want to use lapack: gfortran  ccfull.f90  -llapack -lblas -o solve
 !'''
 
 
@@ -57,6 +58,7 @@ Module ccfull_initialization_mod
   Real(8), parameter :: e2   = 1.44
 
   integer, parameter :: Nlevelmax = 30
+  integer, parameter :: Nbase = 120
   integer, Public ::  Apro, Zpro, Atar, Ztar, L_i
   Real(8), Public ::  R0P, R0T, Rpro, Rtar, ReduceMass, h2m
   Real(8), Public ::  OmegaT, BetaT, OmegaT2, BetaT2, E2T, Beta2T, Beta4T
@@ -71,7 +73,8 @@ Module ccfull_initialization_mod
   Integer, Public ::  IVIBROTP, IVIBROTT, LambdaT, NphononT, LambdaT2, NphononT2
   Integer, Public ::  NrotT, Ntar, LambdaP, NphononP, NrotP, Npro
   Integer, Public ::  Ntrans, iq
-  Integer, Public ::  Nlevel, R_iterat, Nx, Nx_cc, Nx1, Nx2
+  Integer, Public ::  Nlevel, R_iterat
+
   Real(8), Allocatable, Public :: Pot_para1(:), Pot_para2(:), Pot_para3(:)
   Real(8), Allocatable, Public :: Ev(:), eps(:)
   Real(8), Allocatable, Public :: omeahv(:), omeahv2(:), omeahvp(:), erott(:), erotp(:)
@@ -79,6 +82,7 @@ Module ccfull_initialization_mod
   Real(8), Allocatable, Public :: betnahvp(:,:), betcahvp(:,:), bett(:,:), betp(:,:)
   Real(8), Allocatable, Public :: Evec(:,:), CPOT0(:,:), CPOTH(:,:), CPOT(:,:,:)
   Real(8), Allocatable, Public :: H(:,:), unit(:,:)
+  Real(8), Allocatable, Public :: wgauss(:), xgauss(:)
 
   Integer, Allocatable, Public :: imutual(:,:)
   character(len=2), dimension(0:109) :: Element
@@ -149,7 +153,7 @@ Contains
     Read(10,*)R_max, dr
   End Subroutine Read_Input
 
-Subroutine Output_information()
+  Subroutine Output_information()
       Character(len=1) :: ans
 
 
@@ -162,8 +166,7 @@ Subroutine Output_information()
             "Simulation range R from ", R_min, " fm To ", R_max, " fm, dR = ", dr, " fm"
 
       print '(A, F8.3, A, F8.3, A, F8.3, A, F8.3, A)', &
-            "Potential parameters: V0= ", V0, "(MeV), a= ", A0, "(fm), r0= ", R0, "(fm), R= ",&
-             R0*(Apro**(1.0/3.0) + Atar**(1.0/3.0)), "(fm)"
+            "Potential parameters: V0= ", V0, "(MeV), a= ", A0, "(fm), r0= ", R0, "(fm), R= ", R0*(Apro**(1.0/3.0) + Atar**(1.0/3.0)), "(fm)"
 
       print '(A, F8.4, A)', "Coulomb barrier position :", R_barrier, "fm"
 
@@ -184,8 +187,7 @@ Subroutine Output_information()
             "Simulation range R from ", R_min, " fm To ", R_max, " fm, dR = ", dr, " fm"
 
       write(30,'(A, F8.3, A, F8.3, A, F8.3, A, F8.3, A)') &
-            "Potential parameters: V0= ", V0, "(MeV), a= ", A0, "(fm), r0= ", R0, "(fm), R= ",&
-             R0*(Apro**(1.0/3.0) + Atar**(1.0/3.0)), "(fm)"
+            "Potential parameters: V0= ", V0, "(MeV), a= ", A0, "(fm), r0= ", R0, "(fm), R= ", R0*(Apro**(1.0/3.0) + Atar**(1.0/3.0)), "(fm)"
 
       write(30,'(A, F8.4, A)') "Coulomb barrier position :", R_barrier, "fm"
 
@@ -199,8 +201,7 @@ Subroutine Output_information()
 
       if (Ntar /= 0) then
           if (IVIBROTT == 0) then
-              write(*,'(A, F6.3, A, F6.3, A, I0, A, I0)') "Phonon Excitation in the targ.: beta=",&
-                         BetaT, ", omega=", OmegaT, " (MeV), Lambda=", LambdaT, ", Nph=", NphononT
+              write(*,'(A, F6.3, A, F6.3, A, I0, A, I0)') "Phonon Excitation in the targ.: beta=", BetaT, ", omega=", OmegaT, " (MeV), Lambda=", LambdaT, ", Nph=", NphononT
               BetaTn = BetaT
               Write(*,*)' Different beta_N from beta_C for this mode(n/y)?'
               Read(*,*)ans
@@ -208,27 +209,20 @@ Subroutine Output_information()
                 Write(*,*)'beta_N=?'
                 Read(*,*)BetaTn
               End If
-              write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the targ.: beta_N=",&
-                                                 BetaTn, ", beta_C=", BetaT, ", r0=", R0T, " (fm),"
-              write(*,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaT, "&
-                                                 (MeV), Lambda=", LambdaT, ", Nph=", NphononT
-              write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the targ.: beta_N=",&
-                                                   BetaTn, ", beta_C=", BetaT, ", r0=", R0T, " (fm),"
-              write(30,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaT, &
-                                                      " (MeV), Lambda=", LambdaT, ", Nph=", NphononT
+              write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the targ.: beta_N=", BetaTn, ", beta_C=", BetaT, ", r0=", R0T, " (fm),"
+              write(*,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaT, " (MeV), Lambda=", LambdaT, ", Nph=", NphononT
+              write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the targ.: beta_N=", BetaTn, ", beta_C=", BetaT, ", r0=", R0T, " (fm),"
+              write(30,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaT, " (MeV), Lambda=", LambdaT, ", Nph=", NphononT
           else if (IVIBROTT == 1) then
-              write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Rotational Excitation in the targ.: beta2=", Beta2T, &
-                                                        ", beta4=", Beta4T, ", r0=", R0T, " (fm),"
+              write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Rotational Excitation in the targ.: beta2=", Beta2T, ", beta4=", Beta4T, ", r0=", R0T, " (fm),"
               write(*,'(A, F6.3, A, I0)') "                                   E2=", E2T, " (MeV), Nrot=", NrotT
-              write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Rotational Excitation in the targ.: beta2=", Beta2T,&
-                                                         ", beta4=", Beta4T, ", r0=", R0T, " (fm),"
+              write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Rotational Excitation in the targ.: beta2=", Beta2T, ", beta4=", Beta4T, ", r0=", R0T, " (fm),"
               write(30,'(A, F6.3, A, I0)') "                                   E2=", E2T, " (MeV), Nrot=", NrotT
           end if
       end if
 
       if (NphononT2 /= 0) then
-          write(*,'(A, F6.3, A, F6.3, A, I0, A, I0)') "Phonon Excitation in the targ.: beta=", BetaT2, ", omega=",&
-                                                         OmegaT2, " (MeV), Lambda=", LambdaT2, ", Nph=", NphononT2
+          write(*,'(A, F6.3, A, F6.3, A, I0, A, I0)') "Phonon Excitation in the targ.: beta=", BetaT2, ", omega=", OmegaT2, " (MeV), Lambda=", LambdaT2, ", Nph=", NphononT2
           BetaT2n = BetaT2
           Write(*,*)' Different beta_N from beta_C for this mode(n/y)?'
           Read(*,*)ans
@@ -236,14 +230,10 @@ Subroutine Output_information()
             Write(*,*)'beta_N=?'
             Read(*,*)BetaT2n
           End If
-          write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the targ.: beta_N=", BetaT2n,&
-                                                     ", beta_C=", BetaT2, ", r0=", R0T, " (fm),"
-          write(*,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaT2, " (MeV), Lambda=",&
-                                             LambdaT2, ", Nph=", NphononT2
-          write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the targ.: beta_N=", BetaT2n,&
-                                                     ", beta_C=", BetaT2, ", r0=", R0T, " (fm),"
-          write(30,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaT2, " (MeV), Lambda=",&
-                                               LambdaT2, ", Nph=", NphononT2
+          write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the targ.: beta_N=", BetaT2n, ", beta_C=", BetaT2, ", r0=", R0T, " (fm),"
+          write(*,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaT2, " (MeV), Lambda=", LambdaT2, ", Nph=", NphononT2
+          write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the targ.: beta_N=", BetaT2n, ", beta_C=", BetaT2, ", r0=", R0T, " (fm),"
+          write(30,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaT2, " (MeV), Lambda=", LambdaT2, ", Nph=", NphononT2
           Call Mutual
       End if
 
@@ -252,8 +242,7 @@ Subroutine Output_information()
 
       if (Npro /= 0) then
           if (IVIBROTP == 0) then
-              write(*,'(A, F6.3, A, F6.3, A, I0, A, I0)') "Phonon Excitation in the proj.: beta=", BetaP, ", omega=",&
-                                                           OmegaP, " (MeV), Lambda=", LambdaP, ", Nph=", NphononP
+              write(*,'(A, F6.3, A, F6.3, A, I0, A, I0)') "Phonon Excitation in the proj.: beta=", BetaP, ", omega=", OmegaP, " (MeV), Lambda=", LambdaP, ", Nph=", NphononP
               BetaPn = BetaP
               Write(*,*)' Different beta_N from beta_C for this mode(n/y)?'
               Read(*,*)ans
@@ -261,20 +250,14 @@ Subroutine Output_information()
                 Write(*,*)'beta_N=?'
                 Read(*,*)BetaPn
               End If
-              write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the proj.: beta_N=", BetaPn, ", beta_C=",&
-                                                         BetaP, ", r0=", R0P, " (fm),"
-              write(*,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaP, " (MeV), Lambda=",&
-                                                                                       LambdaP, ", Nph=", NphononP
-              write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the proj.: beta_N=", BetaPn,&
-                                                         ", beta_C=", BetaP, ", r0=", R0P, " (fm),"
-              write(30,'(A, F6.3, A, I0, A, I0)') "                              omega=", OmegaP, " (MeV), Lambda=",&
-                                                   LambdaP, ", Nph=", NphononP
+              write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the proj.: beta_N=", BetaPn, ", beta_C=", BetaP, ", r0=", R0P, " (fm),"
+              write(*,'(A, F6.3, A, F6.3, A, I0)') "                              omega=", OmegaP, " (MeV), Lambda=", LambdaP, ", Nph=", NphononP
+              write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Phonon Excitation in the proj.: beta_N=", BetaPn, ", beta_C=", BetaP, ", r0=", R0P, " (fm),"
+              write(30,'(A, F6.3, A, F6.3, A, I0)') "                              omega=", OmegaP, " (MeV), Lambda=", LambdaP, ", Nph=", NphononP
           else if (IVIBROTP == 1) then
-              write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Rotational Excitation in the proj.: beta2=", Beta2P,&
-                                                         ", beta4=", Beta4P, ", r0=", R0P, " (fm),"
+              write(*,'(A, F6.3, A, F6.3, A, F6.3, A)') "Rotational Excitation in the proj.: beta2=", Beta2P, ", beta4=", Beta4P, ", r0=", R0P, " (fm),"
               write(*,'(A, F6.3, A, I0)') "                                   E2=", E2P, " (MeV), Nrot=", NrotP
-              write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Rotational Excitation in the proj.: beta2=", Beta2P,&
-                                                         ", beta4=", Beta4P, ", r0=", R0P, " (fm),"
+              write(30,'(A, F6.3, A, F6.3, A, F6.3, A)') "Rotational Excitation in the proj.: beta2=", Beta2P, ", beta4=", Beta4P, ", r0=", R0P, " (fm),"
               write(30,'(A, F6.3, A, I0)') "                                   E2=", E2P, " (MeV), Nrot=", NrotP
           end if
       end if
@@ -295,6 +278,7 @@ Subroutine Output_information()
   Subroutine Initialize_CCFull()
 
     Implicit None
+        integer :: i
     Allocate(imutual(0:Nlevelmax,0:Nlevelmax))
     Allocate(Ev(Nlevelmax))
     Allocate(Evec(Nlevelmax,Nlevelmax))
@@ -303,16 +287,16 @@ Subroutine Output_information()
     Allocate(omeahv(0:Nlevelmax))
     Allocate(betnahv2(0:Nlevelmax,0:Nlevelmax))
     Allocate(betcahv2(0:Nlevelmax,0:Nlevelmax))
-    Allocate(omeahv2(0:Nlevelmax+1))
+    Allocate(omeahv2(Nlevelmax+1))
     Allocate(betnahvp(0:Nlevelmax,0:Nlevelmax))
     Allocate(betcahvp(0:Nlevelmax,0:Nlevelmax))
     Allocate(omeahvp(0:Nlevelmax))
     Allocate(bett(0:Nlevelmax,0:Nlevelmax))
-    Allocate(erott(0:Nlevelmax+1))
+    Allocate(erott(Nlevelmax+1))
     Allocate(betp(0:Nlevelmax,0:Nlevelmax))
     Allocate(erotp(0:Nlevelmax))
     Allocate(eps(0:Nlevelmax))
-
+    Allocate(xgauss(Nbase), wgauss(Nbase))
     !Allocate(H(Nx_cc,Nx_cc))
     !Allocate(psi(Nx2,Nx1))
     !Allocate(psi0(Nx2))
@@ -328,17 +312,14 @@ Subroutine Output_information()
     R_max = R_min + dr * R_iterat
     t = Hbar**2 / (2 * ReduceMass * dr**2)
     
-    Allocate(CPOT(Nlevelmax,Nlevelmax,0:R_iterat+2))
+    Allocate(CPOT(Nlevelmax,Nlevelmax,R_iterat+2))
     Allocate(CPOT0(Nlevelmax,Nlevelmax))
     Allocate(CPOTH(Nlevelmax,Nlevelmax))
 
+    Call gaussh(Nbase, xgauss, wgauss)
+
     Call Output_information()
 
-
-    !Nx = R_iterat
-    !Nx_cc = Nlevel * Nx
-    !Nx1 = Nx_cc + Nlevel
-    !Nx2 = Nx_cc + 2 * Nlevel
 
   End Subroutine Initialize_CCFull
 
@@ -432,10 +413,23 @@ End Function Vn
 Real(8) Function W(r)
   Use ccfull_initialization_mod
   Real(8), Intent(In) :: r
-  Real(8) :: rw
+  Real(8) :: rw, Ws
+  external Ws
   rw = 1.0D0 * (Apro**(1.0D0/3.0D0) + Atar**(1.0D0/3.0D0))
   W = 50.0D0 / (1.0D0 + Exp((r - rw) / 0.3D0))
+  W = W !+ Ws(r)
+  if(r .gt. 50)W = 0.d0
 End Function W
+
+Real(8) Function Ws(r)
+  Use ccfull_initialization_mod
+  Real(8), Intent(In) :: r
+
+  w0s = 0.
+  rws = 1.2
+  aws = 0.43
+  Ws=w0s/aws*exp((r-rws)/aws)/(1.d0+exp((r-rws)/aws))**2
+End Function Ws
 
 Real(8) Function dVn_dr(r)
   Use ccfull_initialization_mod
@@ -471,7 +465,12 @@ End Function dV_dr
 Real(8) Function Vc(r)
   Use ccfull_initialization_mod
   Real(8), Intent(In) :: r
-  Vc = Zpro * Ztar * Hbar / 137.0D0 / r
+  rc = 1.1*(Apro**(1.d0/3.d0)+Atar**(1.d0/3.d0))
+  if(r > rc)then
+    Vc = Zpro * Ztar * Hbar / 137.0D0 / r
+  Else
+    Vc = Zpro * Ztar * Hbar /137.d0*(3.d0*rc**2-r**2)/2.d0/rc**3
+  End If
 End Function Vc
 
 Real(8) Function Vr(r, l)
@@ -972,6 +971,142 @@ SUBROUTINE matinv(nmax, c, d)
   
 END SUBROUTINE matinv
 
+subroutine matinv_R(nlmax, nmax, cc, d)
+    implicit none
+    integer, intent(in) :: nlmax, nmax
+    complex*16, intent(in) :: cc(nlmax, nlmax)
+    complex*16, intent(out)   :: d(nlmax, nlmax)
+
+    complex*16 :: u(nlmax), v(nlmax)
+    complex*16 :: a, b, t
+    real*8     :: eps1, eps2
+    integer :: n, m, k, l, j
+    complex*16 :: c(nlmax,nlmax)
+    ! thresholds
+    eps1 = 1.0d-20
+    eps2 = 1.0d-30
+
+    ! --- Initialize d as identity matrix ---
+    c = cc
+    do m = 1, nmax
+        do n = 1, nmax
+            if (n == m) then
+                d(n, m) = (1.0d0, 0.0d0)
+            else
+                d(n, m) = (0.0d0, 0.0d0)
+            end if
+        end do
+    end do
+
+    ! --- Gauss-Jordan elimination ---
+    do n = 1, nmax
+        t = c(n, n)
+
+        ! If pivot is too small, try row swapping
+        if (abs(t) < eps1) then
+            j = n
+            do
+                j = j + 1
+                if (j > nmax) then
+                    print *, "matrix not invertible"
+                    return
+                end if
+
+                t = c(n, j)
+
+                if (abs(t) > eps2) then
+                    ! swap row n and j
+                    do k = 1, nmax
+                        u(k) = c(n, k)
+                        v(k) = d(n, k)
+
+                        c(n, k) = c(j, k)
+                        d(n, k) = d(j, k)
+
+                        c(j, k) = u(k)
+                        d(j, k) = v(k)
+                    end do
+                    exit
+                end if
+            end do
+        end if
+
+        ! --- Eliminate other rows ---
+        do k = 1, nmax
+            if (k == n) cycle
+            a = c(k, n) / c(n, n)
+
+            do l = 1, nmax
+                c(k, l) = c(k, l) - a * c(n, l)
+                d(k, l) = d(k, l) - a * d(n, l)
+            end do
+        end do
+
+        ! --- Normalize the pivot row ---
+        b = c(n, n)
+        do m = 1, nmax
+            c(n, m) = c(n, m) / b
+            d(n, m) = d(n, m) / b
+        end do
+
+    end do
+
+end subroutine matinv_R
+
+
+subroutine matinv123(n, A, Ainv)
+    implicit none
+    integer, intent(in) :: n
+    complex*16, intent(in) :: A(n,n)
+    complex*16, intent(out) :: Ainv(n,n)
+    integer :: info
+
+    integer :: i, j, k
+    complex*16 :: tmp
+
+    ! 增广矩阵 aug(n, 2*n)：左边 A，右边 I
+    complex*16 :: aug(n, 2*n)
+
+    ! ---- 初始化增广矩阵 ----
+    aug(:,1:n) = A(:,:)
+    aug(:,n+1:2*n) = (0.d0, 0.d0)
+    do i = 1, n
+        aug(i,n+i) = (1.d0, 0.d0)
+    end do
+
+    ! ---- Gauss–Jordan 消元 ----
+    do i = 1, n
+
+        ! 检查主对角是否为零（近似）
+        if (abs(real(aug(i,i))) + abs(aimag(aug(i,i))) < 1.d-30) then
+            info = i
+            return
+        end if
+
+        ! 1. 主行归一化
+        tmp = aug(i,i)
+        do k = 1, 2*n
+            aug(i,k) = aug(i,k) / tmp
+        end do
+
+        ! 2. 消去其它行的第 i 列
+        do j = 1, n
+            if (j /= i) then
+                tmp = aug(j,i)
+                do k = 1, 2*n
+                    aug(j,k) = aug(j,k) - tmp * aug(i,k)
+                end do
+            end if
+        end do
+
+    end do
+
+    ! ---- 取右半部分作为逆矩阵 ----
+    Ainv(:,:) = aug(:, n+1:2*n)
+    info = 0
+end subroutine matinv123
+
+
 Real(8) Function fact(n)
     Implicit none
     Integer n, i
@@ -1230,8 +1365,7 @@ Subroutine Anharmonicity()
           If (it > jt)Cycle
           If ((it == 0 .And. jt <= 1)) Cycle
           Write(*, *) ' '
-          Write(*, '(A,I2,2A,I2,A,I2,2A,I2,A)') 'Transition from the', LambdaT, sign, '^', it,&
-                                                   ' to the', LambdaT, sign, '^', jt, 'state:'
+          Write(*, '(A,I2,2A,I2,A,I2,2A,I2,A)') 'Transition from the', LambdaT, sign, '^', it, ' to the', LambdaT, sign, '^', jt, 'state:'
           Write(*, '(A,2G15.5)') '   beta_N and beta_C in the HO limit=', betnahv(it, jt), betcahv(it, jt)
           Write(*, '(2A)') '    Modify these beta_N a/o beta_C (n/y)?'
           Read(*, '(A1)') ans
@@ -1288,8 +1422,7 @@ Subroutine Anharmonicity()
           If (it > jt)Cycle
           If ((it == 0 .And. jt <= 1)) Cycle
           Write(*, *) ' '
-          Write(*, '(A,I2,2A,I2,A,I2,2A,I2,A)') 'Transition from the', LambdaT2, sign, '^', it,&
-                                                   ' to the', LambdaT2, sign, '^', jt, 'state:'
+          Write(*, '(A,I2,2A,I2,A,I2,2A,I2,A)') 'Transition from the', LambdaT2, sign, '^', it, ' to the', LambdaT2, sign, '^', jt, 'state:'
           Write(*, '(A,2G15.5)') '   beta_N and beta_C in the HO limit=', betnahv2(it, jt), betcahv2(it, jt)
           Write(*, '(2A)') '    Modify these beta_N a/o beta_C (n/y)?'
           Read(*, '(A1)') ans
@@ -1345,8 +1478,7 @@ Subroutine Anharmonicity()
             If (it > jt)Cycle
             If ((it == 0 .And. jt <= 1)) Cycle
             Write(*, *) ' '
-            Write(*, '(A,I2,2A,I2,A,I2,2A,I2,A)') 'Transition from the', LambdaP, sign, '^', it,&
-                                                     ' to the', LambdaP, sign, '^', jt, 'state:'
+            Write(*, '(A,I2,2A,I2,A,I2,2A,I2,A)') 'Transition from the', LambdaP, sign, '^', it, ' to the', LambdaP, sign, '^', jt, 'state:'
             Write(*, '(A,2G15.5)') '   beta_N and beta_C in the HO limit=', betnahvp(it, jt), betcahvp(it, jt)
             Write(*, '(2A)') '    Modify these beta_N a/o beta_C (n/y)?'
             Read(*, '(A1)') ans
@@ -1579,6 +1711,7 @@ Subroutine coupled_matrix(r, cpot_matrix)
             ! ---- Excitation energy shift ----
             If (it == jt .and. ip == jp .and. it2 == jt2) then
                 if (IVIBROTT == 0) then
+
                     C = C + omeahv(it)
                     eps(i) = eps(i) + omeahv(it)
                 else
@@ -1619,10 +1752,9 @@ Subroutine coupled_matrix(r, cpot_matrix)
   If (Ntrans == 1) Then
       cpot_matrix(1, Nlevel) = Ftrans(r)
       cpot_matrix(Nlevel, 1) = Ftrans(r)
-      cpot_matrix(Nlevel, Nlevel) = cpot_matrix(1, 1) - Qtrans + (Zpro + iq) * (Ztar - iq)&
-                                       / r * Hbar / 137.0 - Zpro * Ztar / r * Hbar / 137.0
+      cpot_matrix(Nlevel, Nlevel) = cpot_matrix(1, 1) - Qtrans + (Zpro + iq) * (Ztar - iq) / r * Hbar / 137.0 - Zpro * Ztar / r * Hbar / 137.0
   End If
-
+  !cpot_matrix = 0.d0
   Return
 
 End Subroutine coupled_matrix
@@ -1853,6 +1985,7 @@ Subroutine Numerov(P)
       Do i0 = 1, Nlevel
         Do ic = 1, Nlevel
           dd0(i0, ic) = fac / sqrt(12.d0) * CPOT(i0, ic, ir - 1)
+
           If (i0 == ic) Then
               dd0(i0, ic) = dd0(i0, ic) + fac / sqrt(12.d0)&
                           * (V(r1, L_i) - ai*W(r1)- E) + sqrt(3.d0)
@@ -1984,13 +2117,369 @@ Subroutine Numerov(P)
       kk = sqrt(2.d0 * ReduceMass / Hbar**2 * e)
       p = p + (abs(ref(io)))**2 * k / kk
       !p = p + (abs(bin(io,1)))**2 * k / kk
-  End Do
 
+  End Do
+  Write(22,*)1-P, ref(1), ref(2)
+  Write(*,*)1-P, ref(1), ref(2)
   P = 1 - P
 
   Return
 
 End Subroutine Numerov
+
+Subroutine Sub_R_matrix(R_matrix)
+  Use ccfull_initialization_mod
+  Implicit None
+  Complex*16, Intent(Out) :: R_matrix(Nlevel, Nlevel)
+  real(8), dimension(0:200) :: fcw, gcw, fpcw, gpcw
+  real(8), dimension(0:200) :: sigmad
+  integer, dimension(0:200) :: iexp
+  Integer ::  n, m, ch_i, ch_j, row, col, Ntot, i
+  Real(8) ::  a, phi_i, phi_j, x_n, x_m
+  Real(8) ::  V, W, r_point
+  complex*16 :: ai
+  complex*16, Allocatable :: c(:,:), cinv(:,:)
+  complex*16 :: total_sum
+  external V, W
+  
+  ai=(0.d0,1.d0)
+  a = R_max
+  Ntot = Nlevel * Nbase
+  Allocate(c(Ntot, Ntot))
+  Allocate(cinv(Ntot, Ntot))
+  c = 0.d0
+  Do n = 1, Nbase
+          x_n = xgauss(n)
+          r_point = a * x_n
+          CPOT0 = 0.d0
+          Call coupled_matrix(r_point, CPOT0)
+    Do m = 1, Nbase
+       x_m = xgauss(m)
+      Do ch_i = 1, Nlevel
+        Do ch_j = 1, Nlevel
+
+          ! the idex of the matrix element
+          row = (ch_i - 1) * Nbase + n
+          col = (ch_j - 1) * Nbase + m
+          
+          !Diagonal Blocks
+          If (ch_i == ch_j) Then
+            If (n == m) Then
+              !kinetic energy and Bloch operator
+              c(row, col) = Hbar**2. / 2.d0 / ReduceMass / a**2/ x_n / (1.d0 - x_n) &
+                          * ((4.*dble(Nbase)**2 + 4.*Nbase + 3.)/3. - (6.d0*x_n - 1.d0)/(3.d0*x_n*(1.d0-x_n)))
+              c(row, col) = c(row, col) - E + V(R_max*x_n, L_i) - ai*W(R_max*x_n)
+            Else
+              !kinetic energy and Bloch operator
+              c(row, col) =  Hbar**2. / (2.d0 * ReduceMass * a) &
+                          * 1.d0 / a * (-1.d0)**(n+m)           &
+                          / sqrt(x_n*x_m*(1.d0-x_n)*(1.d0-x_m)) &
+                          * (dble(Nbase)**2 + Nbase + 1.d0 - 1.d0/(1.d0-x_n) - 1.d0/(1.d0-x_m) &
+                          + (x_n + x_m - 2.d0*x_n*x_m)/(x_n - x_m)**2)
+            End If
+          End If
+
+          !Off-Diagonal Blocks
+          !(Coupling Potential)
+          If (n == m) Then
+          c(row, col) = c(row, col) + CPOT0(ch_i, ch_j)
+          End If
+          
+
+        End Do
+      End Do
+
+    End Do
+  End Do
+    
+    !Call matinv_R(Ntot, Ntot, c, cinv)
+    !Call matinv_lapack(Ntot, c, cinv)
+    Call matinv123(Ntot, c, cinv)
+
+  R_matrix = 0.d0
+  Do ch_i = 1, Nlevel
+    Do ch_j = 1, Nlevel
+      
+      Do n = 1, Nbase
+        Do m = 1, Nbase
+           row = (ch_i - 1) * Nbase + n
+           col = (ch_j - 1) * Nbase + m
+           
+           !phi_i = (-1)**(Nbase + n) / Sqrt(a * xgauss(n) * (1.d0 - xgauss(n)))
+           !phi_j = (-1)**(Nbase + m) / Sqrt(a * xgauss(m) * (1.d0 - xgauss(m)))
+           phi_i = (-1)**(n) / Sqrt(a * xgauss(n) * (1.d0 - xgauss(n)))
+           phi_j = (-1)**(m) / Sqrt(a * xgauss(m) * (1.d0 - xgauss(m)))
+           
+           R_matrix(ch_i, ch_j) = R_matrix(ch_i, ch_j) + &
+                                      (Hbar**2 / (2.d0 * ReduceMass * a)) * &
+                                      phi_i * cinv(row, col) * phi_j
+        End Do
+      End Do
+      
+    End Do
+  End Do
+
+  Deallocate(c, cinv)
+
+End Subroutine Sub_R_matrix
+
+
+Subroutine Sub_S_matrix(P)
+  Use ccfull_initialization_mod
+  
+  Implicit None
+  Real(8), Intent(Out) :: P  ! 输出: 融合/吸收概率
+  
+  ! 局部变量定义
+  real(8) :: fcw_val, gcw_val, fpcw_val, gpcw_val
+  integer :: iexp_val
+  Integer :: i, j, ch, io
+  Real(8) :: a, ak_ch, rho, eta_ch, E_ch, k, kk
+  Real(8) :: qk_vec(Nlevel) ! 存储波数
+  
+  ! 矩阵变量
+  Complex*16 :: R_mat(Nlevel, Nlevel)
+  Complex*16 :: S_mat(Nlevel, Nlevel)
+  Complex*16 :: Z_in(Nlevel, Nlevel), Z_out(Nlevel, Nlevel)
+  Complex*16 :: Z_out_inv(Nlevel, Nlevel) ! Z_out 的逆矩阵
+  
+  ! 波函数向量
+  Complex*16 :: H_plus_vec(Nlevel), dH_plus_vec(Nlevel)   ! Outgoing
+  Complex*16 :: H_minus_vec(Nlevel), dH_minus_vec(Nlevel) ! Incoming
+  
+  Complex*16 :: ai
+  
+  ai = (0.d0, 1.d0)
+  a = R_max
+
+  ! 1. R_matrix (Nlevel x Nlevel)
+  Call Sub_R_matrix(R_mat)
+  Call coupled_matrix(R_max, CPOT0)
+  ! 2. Coulomb wavfunction (external function)
+  Do ch = 1, Nlevel
+     
+    E_ch = E - CPOT0(ch,ch)
+    ak_ch = sqrt(2.d0 * ReduceMass * E_ch / hbar**2)
+    qk_vec(ch) = ak_ch
+    rho = ak_ch * a
+    eta_ch = (Zpro * Ztar / 137.d0) * Sqrt(ReduceMass / (2.d0 * E_ch))
+
+    Call myCOULFG(L_i*1.d0, eta_ch, rho, &
+                  fcw_val, fpcw_val, gcw_val, gpcw_val, iexp_val)
+    
+    ! H+ (Outgoing) and H- (Incoming)
+    ! H = G + iF
+    H_plus_vec(ch)  = gcw_val + ai * fcw_val
+    dH_plus_vec(ch) = ak_ch * (gpcw_val + ai * fpcw_val) ! 导数 d/dr
+    
+    H_minus_vec(ch)  = gcw_val - ai * fcw_val
+    dH_minus_vec(ch) = ak_ch * (gpcw_val - ai * fpcw_val)
+      
+
+  End Do
+  ! S = Z_out^{-1 * Z_in
+  ! Z_ij = H_i * delta_ij - R_ij * a * dH_j
+  Z_out = (0.d0, 0.d0)
+  Z_in  = (0.d0, 0.d0)
+  S_mat = (0.d0, 0.d0)
+
+  Do i = 1, Nlevel
+     Do j = 1, Nlevel
+        
+        Z_out(i, j) = - R_mat(i, j) * a * dH_plus_vec(j)
+        Z_in(i, j)  = - R_mat(i, j) * a * dH_minus_vec(j)
+        
+        If (i == j) Then
+           Z_out(i, j) = Z_out(i, j) + H_plus_vec(i)
+           Z_in(i, j)  = Z_in(i, j) + H_minus_vec(i)
+        End If
+        
+     End Do
+  End Do
+
+  ! 4. matrix inversion
+  Call matinv_R(Nlevel, Nlevel, Z_out, Z_out_inv)
+
+  ! S_mat = Z_out_inv * Z_in
+  S_mat = Matmul(Z_out_inv, Z_in)
+
+  ! 5. (Symmetric S-matrix)
+  ! S_phys(i,j) = S(i,j) * sqrt(k_i / k_j)
+  Do i = 1, Nlevel
+     Do j = 1, Nlevel
+        If (qk_vec(i) > 0.d0 .and. qk_vec(j) > 0.d0) Then
+           S_mat(i, j) = S_mat(i, j) * Sqrt(qk_vec(i) / qk_vec(j))
+        Else
+           S_mat(i, j) = (0.d0, 0.d0)
+        End If
+     End Do
+  End Do
+  
+  ! 6. 计算融合/反应概率 P
+  ! P = 1 - Sum(|S_1j|^2)
+  P = 1.d0
+  Do io = 1, Nlevel
+      If (E - eps(io) .lt. 0.d0) Cycle
+      k = sqrt((2.d0 * ReduceMass / Hbar**2 * (E - eps(io))))
+      kk = sqrt(2.d0 * ReduceMass / Hbar**2 * E)
+      P = P - Abs(S_mat(1, io))**2 !* k / kk
+
+  End Do
+
+  If (P < 0.d0) P = 0.d0
+
+End Subroutine Sub_S_matrix
+
+Subroutine Sub_S_matrix_1ch(P)
+  Use ccfull_initialization_mod
+  
+  Implicit None
+  Real(8), Intent(Out) :: P
+  real(8), dimension(0:200) :: fcw, gcw, fpcw, gpcw
+  real(8), dimension(0:200) :: sigmad
+  integer, dimension(0:200) :: iexp
+  Integer ::  i, j, lc
+  Real(8) ::  a, ak, rho, eta
+  Complex*16  ::  R(Nlevel, Nlevel), S
+  complex*16  ::  ai, R_matrix
+  complex*16  ::  H_in, H_out, dH_in, dH_out
+  ai=(0.d0,1.d0)
+  Call Sub_R_matrix(R)
+  R_matrix = R (1,1)
+  Do lc = 0, 200
+    fcw(lc)   = 0.0d0
+    gcw(lc)   = 0.0d0
+    fpcw(lc)  = 0.0d0
+    gpcw(lc)  = 0.0d0
+    sigmad(lc) = 0.0d0
+    iexp(lc)   = 0
+  End Do
+  a = R_max
+  !Coulomb wavefunction
+  ak  = sqrt(2.d0 * ReduceMass * E / hbar**2) 
+  rho = ak * R_max
+  eta = (Zpro * Ztar / 137.d0) * Sqrt(ReduceMass / (2.d0 * E))
+  Call myCOULFG(L_i*1.d0, eta, rho, fcw(L_i), fpcw(L_i), gcw(L_i), gpcw(L_i), iexp(L_i))
+  H_out     = gcw(L_i) + ai*fcw(L_i)
+  H_in      = gcw(L_i) - ai*fcw(L_i)
+  dH_out    = ak*(gpcw(L_i)  + ai*fpcw(L_i))
+  dH_in     = ak*(gpcw(L_i)  - ai*fpcw(L_i))
+
+  ! there is some error for fpcw
+
+  S = (H_in - R_matrix * a * dH_in)/(H_out - R_matrix * a * dH_out)
+  !write(22,*)' E= ', E, ' l= ', L_i,'  rmat= ', R_matrix, ' Smat= ', S
+
+
+  P = 1.d0 - Abs(S)**2
+
+End Subroutine Sub_S_matrix_1ch
+
+SUBROUTINE gaussh(n, x, w)
+  !---------------------------------------------------------
+  ! Purpose : Compute the zeros of Legendre polynomial Pn(x)
+  !           in the interval [0,1] (mapped from [-1,1]),
+  !           and the corresponding weighting coefficients
+  !           for Gauss-Legendre integration.
+  !
+  ! Input :   n    --- Order of the Legendre polynomial (Number of points)
+  ! Output:   x(n) --- Zeros of the Legendre polynomial (Mapped to [0,1])
+  !           w(n) --- Corresponding weighting coefficients
+  !
+  ! Algorithm: Newton-Raphson Method
+  ! [cite_start]Source: Adapted from rmatrix.f [cite: 31-36]
+  !---------------------------------------------------------
+  Implicit None
+
+  ! Argument declarations
+  Integer, Intent(In)  :: n
+  Real(8), Intent(Out) :: x(n), w(n)
+
+  ! Local variables
+  Real(8) :: z, z0, p, f0, f1, pf, pd, fd, q, wp, gd
+  Real(8), Parameter :: pi = 3.1415926535898D0
+  Real(8), Parameter :: one = 1.0D0
+  Integer :: n0, nr, i, k, j
+
+  ! Determine the number of roots to compute (due to symmetry)
+  n0 = (n + 1) / 2
+
+  Do nr = 1, n0
+      ! Initial guess using high-precision trigonometric approximation
+      z = Cos(pi * (Dble(nr) - 0.25D0) / (Dble(n) + 0.5D0))
+
+      ! Newton-Raphson iteration loop
+      Do
+          z0 = z
+          p = 1.0D0
+          
+          ! Deflation: Remove roots that have already been found
+          Do i = 1, nr - 1
+              p = p * (z - x(i))
+          End Do
+
+          f0 = 1.0D0
+          ! Handle the center root for odd N
+          If (nr == n0 .And. Mod(n, 2) /= 0) Then
+              z = 0.0D0
+          End If
+          f1 = z
+
+          ! Compute Pn(z) and its derivative using recurrence relations
+          Do k = 2, n
+              pf = (2.0D0 - one / Dble(k)) * z * f1 - (1.0D0 - one / Dble(k)) * f0
+              pd = Dble(k) * (f1 - z * pf) / (1.0D0 - z * z)
+              f0 = f1
+              f1 = pf
+          End Do
+
+          ! Exit if the root is exactly zero to avoid division errors
+          If (z == 0.0D0) Exit
+
+          fd = pf / p
+          q = 0.0D0
+          
+          ! Compute correction terms based on deflation
+          Do i = 1, nr - 1
+              wp = 1.0D0
+              Do j = 1, nr - 1
+                  If (j /= i) Then
+                      wp = wp * (z - x(j))
+                  End If
+              End Do
+              q = q + wp
+          End Do
+
+          gd = (pd - q * fd) / p
+          
+          ! Update Z
+          z = z - fd / gd
+
+          ! Convergence check (using machine precision tolerance)
+          If (Abs(z - z0) <= Abs(z) * 1.0D-15) Exit
+      End Do
+
+      ! Store roots and weights (utilizing symmetry about 0)
+      x(nr) = z
+      x(n + 1 - nr) = -z
+      w(nr) = 2.0D0 / ((1.0D0 - z * z) * pd * pd)
+      w(n + 1 - nr) = w(nr)
+
+      !x(n0 + 1 - nr) = z
+      !x(n + 1 - nr) = -z
+      !w(n0 + 1 - nr) = 2.0D0 / ((1.0D0 - z * z) * pd * pd)
+      !w(n + 1 - nr) = w(n0 + 1 - nr)
+  End Do
+
+  !---------------------------------------------------------
+  ! Interval Mapping: [-1, 1] -> [0, 1]
+  ! This step is specific to the Lagrange Mesh Method used in
+  ![cite_start]! the R-matrix code[cite: 36].
+  !---------------------------------------------------------
+  x(1:n) = (1.0D0 + x(n:1:-1)) / 2.0D0
+  w(1:n) = w(n:1:-1) / 2.0D0
+
+END SUBROUTINE gaussh
 
 Subroutine myCOULFG(angL,eta,rho,myf,mydf,myg,mydg,iv)
   double precision  angL,eta, rho, myf, mydf,myg,mydg
@@ -2451,7 +2940,8 @@ Program CCFull_Main
   Implicit None
   Integer ::  i, j, ir, ie, il
   Integer ::  Iestep
-  Real(8) ::  r, rh, sigma, spin, s0, P_0, P, V
+  Real(8) ::  r, rh, sigma, spin, s0, P_0, P, P1, V
+  complex*16 :: S
   external V
   Call Initialize_CCFull()
   Write(*,*)'Nlevle = ', Nlevel
@@ -2480,7 +2970,7 @@ Program CCFull_Main
     spin  = 0.
     P_0 = 0.
 
-    Do il = 0, 200
+    Do il = 0,200
       L_i = il
       s0 = sigma
 
@@ -2490,8 +2980,12 @@ Program CCFull_Main
       !    exit  
       !End If
 
-      Call Numerov(P)
-      
+      !Call Numerov(P)
+
+      Call Sub_S_matrix(P)
+
+      !Write(*,*)E, L_i, P
+
       sigma = sigma + (2.0D0 * L_i + 1.0D0) * P * pi * Hbar**2 / (2.0D0 * ReduceMass * E) * 10.0D0
       spin  = spin  + (2.0D0 * L_i + 1.0D0) * P * pi * Hbar**2 / (2.0D0 * ReduceMass * E) * 10.0D0 * L_i
 
@@ -2506,12 +3000,10 @@ Program CCFull_Main
     !stop
 
     if (sigma < 0.01D0) then
-        write(*,'(A,F8.3,A,E15.5,A,F8.5,A,E15.5)') ' E = ', E, ' MeV,   Sigma = ', sigma,&
-                                       ' mb, <L> = ', spin / sigma, ' hbar, <P_0> = ', P_0
+        write(*,'(A,F8.3,A,E15.5,A,F8.5,A,E15.5)') ' E = ', E, ' MeV,   Sigma = ', sigma, ' mb, <L> = ', spin / sigma, ' hbar, <P_0> = ', P_0
         write(20,'(F15.5,E15.5,F15.5,E15.5)') E,  sigma,  spin / sigma,  P_0
     else
-        write(*,'(A,F8.3,A,F15.5,A,F8.5,A,E15.5)') ' E = ', E, ' MeV,   Sigma = ', sigma,&
-                                       ' mb, <L> = ', spin / sigma, ' hbar, <P_0> = ', P_0
+        write(*,'(A,F8.3,A,F15.5,A,F8.5,A,E15.5)') ' E = ', E, ' MeV,   Sigma = ', sigma, ' mb, <L> = ', spin / sigma, ' hbar, <P_0> = ', P_0
         write(20,'(4F15.5)') E,  sigma,  spin / sigma,  P_0
     end if
 
@@ -2520,9 +3012,6 @@ Program CCFull_Main
   Print *, "Program completed successfully."
 
 End Program CCFull_Main
-
-
-
 
 
 
