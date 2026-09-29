@@ -72,7 +72,84 @@
    font-weight: bold;
  }
  
- footer {
+footer {
    color: #adb5bd;
    line-height: 1.5rem;
+ }
+
+ .page-container {
+   padding-top: 2.2rem;
+   padding-bottom: 2rem;
+ }
+
+ .page-nav {
+   margin-bottom: 1.5rem;
+ }
+
+ .page-nav a,
+ .page-content a,
+ .archive-list a {
+   color: #2563eb;
+ }
+
+ .page-title {
+   margin: 0 0 1.5rem;
+   padding-bottom: .6rem;
+   border-bottom: .1rem solid #adb5bd;
+   font-size: 2rem;
+ }
+
+ .page-content {
+   line-height: 1.7;
+   overflow-wrap: anywhere;
+ }
+
+ .page-content h1,
+ .page-content h2,
+ .page-content h3 {
+   margin-top: 1.8rem;
+   line-height: 1.35;
+ }
+
+ .page-content img {
+   max-width: 100%;
+   height: auto;
+ }
+
+ .page-content pre {
+   overflow-x: auto;
+   padding: 1rem;
+   border-radius: .4rem;
+   background: #f1f3f5;
+ }
+
+ .page-content code {
+   overflow-wrap: normal;
+ }
+
+ .archive-list {
+   padding: 0;
+   list-style: none;
+ }
+
+ .archive-list li {
+   display: flex;
+   justify-content: space-between;
+   gap: 1rem;
+   padding: .6rem 0;
+   border-bottom: .1rem solid #e9ecef;
+ }
+
+ @media (max-width: 48rem) {
+   .page-container {
+     padding: 1.2rem .8rem 2rem;
+   }
+
+   .page-title {
+     font-size: 1.6rem;
+   }
+
+   .archive-list li {
+     display: block;
+   }
  }
