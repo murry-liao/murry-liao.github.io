@@ -93,12 +93,11 @@ section {
 }
 
 .section-title {
-    font-size: .8rem;
-    letter-spacing: .08em;
+    font-size: 1.3rem;
     min-width: 10rem;
-    margin-bottom: .9rem;
+    margin-bottom: 1rem;
     padding-bottom: .25rem;
-    padding-left: .9rem;
+    padding-left: 1rem;
 }
 
 .block {

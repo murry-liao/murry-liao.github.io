@@ -217,11 +217,10 @@ header {
 }
 
 .section-title {
-  font-family: var(--font-mono);
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-weight: 700;
   text-align: left;
-  text-transform: uppercase;
-  color: var(--accent-dark);
+  color: var(--text);
   border-bottom: none;
   position: relative;
 }
@@ -230,9 +229,9 @@ header {
   content: '';
   position: absolute;
   left: 0;
-  top: .2em;
-  width: .45rem;
-  height: .45rem;
+  top: .4em;
+  width: .5rem;
+  height: .5rem;
   border-radius: 2px;
   background: var(--accent);
 }
