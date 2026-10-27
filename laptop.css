@@ -54,8 +54,8 @@ header {
 }
 
 .author-img {
-    width: 7rem;
-    height: 7rem;
+    width: 14rem;
+    height: 14rem;
     padding: .6rem;
     object-fit: contain;
 }
