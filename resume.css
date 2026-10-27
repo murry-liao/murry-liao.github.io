@@ -1,157 +1,415 @@
 /*
- * Theme of Mtics Resume
- * Copyright (c) Jevis Li, 2020
+ * Theme of Mtics Resume (customized)
  */
- @import url(mobile.css) screen and (max-device-width: 48rem);
- @import url(laptop.css) all and (min-device-width: 48rem);
- 
- html {
-   width: 100%;
-   font-size: 14px; }
- 
- body {
-   text-align: center;
-   width: 100%;
-   font-family: system-ui,"Noto Sans", "Segoe UI", Roboto, Helvetica, "Hiragino Sans GB", "Microsoft Yahei", sans-serif;
-   -webkit-font-smoothing: antialiased;
-   font-size: 1rem;
-   margin: 0;
-   color: #495057;
-   background-color: #fff; }
- 
- a {
-   text-decoration: none;
-   color: inherit; 
- }
- a:hover {
-   text-decoration: underline; 
- }
- 
- @media print {
-   html {
-     font-size: 12px; }
- 
-   .print {
-     display: none; } 
+@import url(mobile.css) screen and (max-width: 48rem);
+@import url(laptop.css) screen and (min-width: 48.0625rem);
 
-    footer{
-      display: none;
-    }
-   
- }
- 
- .container {
-   margin-left: auto;
-   margin-right: auto;
-   margin-bottom: 1rem;
-   width: 100%;
-   max-width: none;
-   box-sizing: border-box;
-   text-align: left; 
- }
- 
- .contact-item:a {
-   color: inherit;
-   text-decoration: none; 
- }
- 
- .section-title {
-   font-weight: bolder;
-   text-align: left;
-   text-transform: uppercase;
-   border-bottom: 0.1rem solid #adb5bd;
- }
- 
- .block:last-child {
-   margin-bottom: 0; 
- }
- 
- .block-title {
-   font-weight: bold; 
- }
- 
- .block-subtitle {
-   font-weight: bold;
- }
- 
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --border: #e3e7ed;
+  --text: #1a1d23;
+  --text-muted: #5b6472;
+  --text-faint: #97a0ac;
+  --accent: #1d4ed8;
+  --accent-dark: #1e3a8a;
+  --accent-soft: #eaf0fd;
+  --nav-bg: #0b1220;
+  --nav-text: #aab4c5;
+  --nav-text-active: #ffffff;
+  --radius: .7rem;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, .08);
+  --font-sans: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Sans GB", "Microsoft Yahei", sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  font-size: 14px;
+}
+
+body {
+  width: 100%;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--text);
+  background-color: var(--bg);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+@media print {
+  html {
+    font-size: 12px;
+  }
+
+  .print,
+  .site-nav,
+  .page-nav {
+    display: none;
+  }
+
+  footer {
+    display: none;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .resume-grid section {
+    box-shadow: none;
+    border-color: #ccc;
+  }
+}
+
+/* ---- layout shell ---- */
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 74rem;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+/* ---- top nav (home + sub pages share the same bar) ---- */
+
+.site-nav,
+.page-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--nav-bg);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+.site-nav-inner {
+  max-width: 74rem;
+  margin: 0 auto;
+  padding: .9rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.page-nav .site-nav-inner {
+  justify-content: flex-start;
+}
+
+.site-nav .brand {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--nav-text-active);
+  font-size: .95rem;
+  white-space: nowrap;
+}
+
+.site-nav .brand::before {
+  content: '>_ ';
+  color: #5b84ff;
+}
+
+.site-nav .nav-links {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.site-nav .nav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.site-nav .nav-links a,
+.page-nav a {
+  color: var(--nav-text);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  white-space: nowrap;
+  transition: color .15s ease;
+}
+
+.site-nav .nav-links a:hover,
+.site-nav .brand:hover,
+.page-nav a:hover {
+  color: var(--nav-text-active);
+  text-decoration: none;
+}
+
+/* ---- header / hero ---- */
+
+header {
+  border-top: 3px solid var(--accent);
+}
+
+.bio {
+  grid-column: 1 / -1;
+  max-width: 54rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.contact-item:a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  padding: .32rem .65rem;
+  border-radius: 999px;
+}
+
+.contact-item i {
+  color: var(--accent);
+}
+
+.author-img {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+
+/* ---- section cards ---- */
+
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.4rem 1.6rem;
+  transition: box-shadow .15s ease;
+}
+
+.section-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.module-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.section-title {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+  border-bottom: none;
+  position: relative;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: .2em;
+  width: .45rem;
+  height: .45rem;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.section-content {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.section-content li {
+  padding: .6rem 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.section-content li:last-child {
+  border-bottom: none;
+  padding-bottom: 0 !important;
+}
+
+.block:last-child {
+  margin-bottom: 0;
+}
+
+.block-title a,
+.section-content li > a {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.block-title a:hover,
+.section-content li > a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.block-title {
+  font-weight: bold;
+}
+
+.block-subtitle {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.block-content {
+  color: var(--text-muted);
+}
+
+.muted {
+  color: var(--text-faint) !important;
+  font-weight: 600;
+}
+
+.lang-tag {
+  display: inline-block;
+  margin-top: .4rem;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+  border-radius: .3rem;
+  padding: .12rem .45rem;
+}
+
 footer {
-   color: #adb5bd;
-   line-height: 1.5rem;
- }
+  color: var(--text-faint);
+  text-align: center;
+  font-size: .82rem;
+  border-top: 1px solid var(--border);
+}
 
- .page-container {
-   padding-top: 2.2rem;
-   padding-bottom: 2rem;
- }
+/* ---- sub pages: talks/lectures/publications/code index, future wiki pages ---- */
 
- .page-nav {
-   margin-bottom: 1.5rem;
- }
+.page-content a,
+.archive-list a {
+  color: var(--accent);
+}
 
- .page-nav a,
- .page-content a,
- .archive-list a {
-   color: #2563eb;
- }
+.page-title {
+  padding-bottom: .6rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+}
 
- .page-title {
-   margin: 0 0 1.5rem;
-   padding-bottom: .6rem;
-   border-bottom: .1rem solid #adb5bd;
-   font-size: 2rem;
- }
+.page-content {
+  overflow-wrap: anywhere;
+}
 
- .page-content {
-   line-height: 1.7;
-   overflow-wrap: anywhere;
- }
+.page-content h1,
+.page-content h2,
+.page-content h3 {
+  line-height: 1.35;
+}
 
- .page-content h1,
- .page-content h2,
- .page-content h3 {
-   margin-top: 1.8rem;
-   line-height: 1.35;
- }
+.page-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: .4rem;
+}
 
- .page-content img {
-   max-width: 100%;
-   height: auto;
- }
+.page-content pre {
+  overflow-x: auto;
+  padding: 1rem 1.2rem;
+  border-radius: .5rem;
+  background: var(--nav-bg);
+  color: #d7deeb;
+}
 
- .page-content pre {
-   overflow-x: auto;
-   padding: 1rem;
-   border-radius: .4rem;
-   background: #f1f3f5;
- }
+.page-content code {
+  font-family: var(--font-mono);
+  overflow-wrap: normal;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  padding: .1rem .35rem;
+  border-radius: .3rem;
+  font-size: .9em;
+}
 
- .page-content code {
-   overflow-wrap: normal;
- }
+.page-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
 
- .archive-list {
-   padding: 0;
-   list-style: none;
- }
+.page-content blockquote {
+  margin: 1.2rem 0;
+  padding: .3rem 1rem;
+  border-left: 3px solid var(--accent);
+  color: var(--text-muted);
+  background: var(--accent-soft);
+}
 
- .archive-list li {
-   display: flex;
-   justify-content: space-between;
-   gap: 1rem;
-   padding: .6rem 0;
-   border-bottom: .1rem solid #e9ecef;
- }
+.page-content ul,
+.page-content ol {
+  padding-left: 1.4rem;
+}
 
- @media (max-width: 48rem) {
-   .page-container {
-     padding: 1.2rem .8rem 2rem;
-   }
+.page-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
 
-   .page-title {
-     font-size: 1.6rem;
-   }
+.page-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.2rem 0;
+  font-size: .95em;
+}
 
-   .archive-list li {
-     display: block;
-   }
- }
+.page-content th,
+.page-content td {
+  border: 1px solid var(--border);
+  padding: .5rem .7rem;
+  text-align: left;
+}
+
+.page-content th {
+  background: var(--bg);
+}
+
+.archive-list {
+  padding: 0;
+  list-style: none;
+}
+
+.archive-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .7rem 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.archive-list time {
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+}

@@ -4,12 +4,27 @@
   <title>Résumé</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css?family=Noto+Sans" rel="stylesheet">
-  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/resume.css">
 <meta name="generator" content="Hexo 8.0.0"></head>
 
   <body>
+  <nav class="site-nav">
+  <div class="site-nav-inner">
+    <a class="brand" href="/">Zehong Liao</a>
+    <div class="nav-links">
+      <a href="#education">Education</a>
+      <a href="#RecentTalk">Talks</a>
+      <a href="#LectureandNotes">Lectures</a>
+      <a href="#Listofpublication">Publications</a>
+      <a href="#Code">Code</a>
+    </div>
+  </div>
+</nav>
+
   <div class="container">
   <header>
     <div class="name-wrapper">
@@ -44,12 +59,15 @@
       <img class="author-img" src="/img/Squirtle.png" alt="author-img"/>
       
     </div>
+    
+    <p class="bio">I'm a PhD candidate in nuclear physics at Sun Yat-sen University, working with Prof. Zhu Long on reaction dynamics in heavy-ion collisions -- multinucleon transfer, sub-barrier fusion, and coupled-channels methods. I'm currently a research visitor at Kyoto University, working with Prof. Kouichi Hagino on emulator techniques for nuclear reaction calculations.
+</p>
+    
   </header>
 
-  <div class="resume-grid">
-  <section id="education">
+  <section id="education" class="section-card">
     <div class="section-title">
-      Education 
+      Education
     </div>
     <div class="section-content">
       
@@ -98,51 +116,44 @@
     </div>
   </section>
 
-  <section id="RecentTalk">
-    <div class="section-title">Recent Talk</div>
-    <ul class="section-content">
-      
-      <li>
-      
-      <a href="/file_talk/"><strong>My Recent Talk</strong></a>
-        <div class="block-content">
-          
-      
-      </li>
+  <div class="module-grid">
 
-      
-    </ul>
-  </section>
+    <section id="RecentTalk" class="section-card">
+      <div class="section-title">Recent Talk</div>
+      <ul class="section-content">
+        
+        <li><a href="/file_talk/"><strong>My Recent Talk</strong></a></li>
+        
+      </ul>
+    </section>
 
+    <section id="LectureandNotes" class="section-card">
+      <div class="section-title">Lecture and Notes</div>
+      <ul class="section-content">
+        
+        <li><a href="/file_lecture/NFTSD/">Nonequilibrium Field Theories and Stochastic Dynamics</a></li>
+        
+        <li><a href="/file_lecture/CCFULL/main.pdf">Coupled channel formalism and the emulator</a></li>
+        
+        <li><a href="/file_lecture/">All notes →</a></li>
+        
+      </ul>
+    </section>
 
+    <section id="Listofpublication" class="section-card">
+      <div class="section-title">List of publication</div>
+      <ul class="section-content">
+        
+        <li><a href="/file_publication/">My Publication</a></li>
+        
+      </ul>
+    </section>
 
-  <section id="LectureandNotes">
-    <div class="section-title">Lecture and Notes</div>
-    <ul class="section-content">
-      
-      <li><a href="/file_lecture/NFTSD/">Nonequilibrium Field Theories and Stochastic Dynamics</a></li>
-      
-      <li><a href="/file_lecture/CCFULL/main.pdf">Coupled channel formalism and the emulator</a></li>
-      
-    </ul>
-  </section>
+  </div>
 
-
-
-  <section id="Listofpublication">
-    <div class="section-title">List of publication</div>
-    <ul class="section-content">
-      
-      <li><a href="/file_publication/">My Publication</a></li>
-      
-    </ul>
-  </section>
-
-
-
-  <section id="Code">
+  <section id="Code" class="section-card">
     <div class="section-title">Code</div>
-    <ul class="section-content">
+    <ul class="section-content code-content">
       
       <li>
         
@@ -151,21 +162,17 @@
         <div class="block-content">
           A programe to describe the Coulomb barrier and the potential energy surface
         </div>
-        <div class="block-content">
-          Fortran 90
-        </div>
+        <span class="lang-tag">Fortran 90</span>
       </li>
       
       <li>
         
-        <strong>Dinuclear system model (not available)</strong>
+        <strong class="muted">Dinuclear system model (not available)</strong>
         
         <div class="block-content">
           A programe to describe the multinucleon transfer reaction
         </div>
-        <div class="block-content">
-          Fortran 90
-        </div>
+        <span class="lang-tag">Fortran 90</span>
       </li>
       
       <li>
@@ -175,39 +182,32 @@
         <div class="block-content">
           A programe to describe the subbarrier fusion reaction
         </div>
-        <div class="block-content">
-          Fortran 90
-        </div>
+        <span class="lang-tag">Fortran 90</span>
       </li>
       
       <li>
         
-        <strong>Finite-range liquid-drop model (not available)</strong>
+        <strong class="muted">Finite-range liquid-drop model (not available)</strong>
         
         <div class="block-content">
           A programe to calculate the mass
         </div>
-        <div class="block-content">
-          Fortran 90
-        </div>
+        <span class="lang-tag">Fortran 90</span>
       </li>
       
       <li>
         
-        <strong>Two center shell model (not available)</strong>
+        <strong class="muted">Two center shell model (not available)</strong>
         
         <div class="block-content">
           A programe to calculate the shell correction
         </div>
-        <div class="block-content">
-          Fortran 90
-        </div>
+        <span class="lang-tag">Fortran 90</span>
       </li>
       
     </ul>
   </section>
 
-  </div>
 </div>
 
   
