@@ -357,6 +357,12 @@ footer {
   padding: 0;
 }
 
+.page-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .2rem 0;
+}
+
 .page-content blockquote {
   margin: 1.2rem 0;
   padding: .3rem 1rem;
