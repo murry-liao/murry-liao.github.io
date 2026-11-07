@@ -1,0 +1,182 @@
+\documentclass[10pt]{article}
+
+\usepackage[a4paper,margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{tgheros}
+\usepackage{amssymb}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{xcolor}
+\definecolor{accent}{HTML}{3a9ade}
+\definecolor{rule}{HTML}{BFC7CE}
+\definecolor{muted}{HTML}{3a9ade}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks,colorlinks=true,urlcolor=accent,linkcolor=accent]{hyperref}
+\usepackage{fancyhdr}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+\titleformat{\section}
+  {\bfseries\large}
+  {}{0em}{}
+  [\vspace{1pt}{\color{rule}\titlerule[0.6pt]}]
+\titlespacing*{\section}{0pt}{0.9em}{0.5em}
+
+% date column + content column, used throughout
+\newlength{\datecol}
+\setlength{\datecol}{2.35cm}
+\newcommand{\cvrow}[2]{%
+  \noindent\begin{minipage}[t]{\datecol}\color{accent}\bfseries\small #1\end{minipage}%
+  \begin{minipage}[t]{\dimexpr\linewidth-\datecol\relax}#2\end{minipage}\par\vspace{7pt}%
+}
+% bold 2-digit teal number + content, used for research work and publications
+\newlength{\numcol}
+\setlength{\numcol}{1.5em}
+\newcommand{\cvnum}[2]{%
+  \noindent\begin{minipage}[t]{\numcol}\color{accent}\bfseries #1\end{minipage}%
+  \begin{minipage}[t]{\dimexpr\linewidth-\numcol\relax}#2\end{minipage}\par\vspace{7pt}%
+}
+
+\pagestyle{empty}
+
+\begin{document}
+
+%---------------------------------------------------------
+% Header
+%---------------------------------------------------------
+{\Huge\bfseries Zehong Liao}\\[0.3em]
+{\color{accent} Nuclear Reaction Theory\ /\ Low-Energy Heavy-Ion Reactions}\\[0.6em]
+{\small
+  \textbf{Email} \href{mailto:liaozh26@mail2.sysu.edu.cn}{liaozh26@mail2.sysu.edu.cn}
+  \quad\textbf{Website} \href{https://murry-liao.github.io}{murry-liao.github.io}
+  \quad\textbf{GitHub} \href{https://github.com/murry-liao}{murry-liao}
+}\\[0.5em]
+{\color{rule}\rule{\linewidth}{0.6pt}}
+\vspace{0.3em}
+
+%---------------------------------------------------------
+\section*{Academic Overview}
+\textbf{PhD in Physics, Sun Yat-sen University (expected July 2026).} Works on the theory of
+low-energy heavy-ion reactions, with a focus on multinucleon transfer, isotope-production
+mechanisms, and sub-barrier fusion. Author of 13 publications (6 as first author); research
+visitor at Kyoto University, Japan.
+
+%---------------------------------------------------------
+\section*{Education \& Research Experience}
+
+\cvrow{Sep 2021 -- \\ Jul 2026}{%
+  \textbf{Sun Yat-sen University}, China \textperiodcentered\ PhD in Physics\\
+  Sino-French Institute of Nuclear Engineering and Technology; Supervisor: Prof. Long Zhu.
+}
+\cvrow{Apr 2025 -- \\ Dec 2025}{%
+  \textbf{Kyoto University}, Japan \textperiodcentered\ Research Visitor\\
+  Department of Physics, Graduate School of Science; Host: Prof. Kouichi Hagino. 
+  %
+}
+\cvrow{Sep 2017 -- \\ Jun 2021}{%
+  \textbf{North China Electric Power University}, China \textperiodcentered\ B.Sc.\\
+  Nuclear Science and Technology.%
+}
+
+%---------------------------------------------------------
+\section*{Research Directions}
+\begin{itemize}[leftmargin=1.2em,itemsep=4pt,topsep=2pt,label={\color{accent}$\blacktriangleright$}]
+\item \textbf{Multinucleon Transfer Reactions (MNT)} Nucleon exchange, charge equilibration, shell
+  effects, and their influence on the production cross sections and angular distributions of
+  neutron-rich $N=126$ isotones.
+\item \textbf{Low-Energy Heavy-Ion Reaction Dynamics} Quasielastic scattering, transfer, and fusion
+  studied via the dinuclear system model, master equations, and semiclassical dynamics; developing
+  a unified Coupled Master--Langevin model.
+\item \textbf{Nuclear Reaction Computation Methods} Coupled-channels theory, reduced-basis and
+  emulator methods, for sub-barrier fusion cross-section calculations and constraining nuclear
+  deformation parameters.
+\end{itemize}
+
+%---------------------------------------------------------
+\section*{Talks \& Academic meeting (Selected)}
+
+\cvrow{2026.10}{\textbf{A unified description of low-energy fusion and multinucleon-transfer
+  reactions within the Coupled Master--Langevin model} \textperiodcentered\ Seminar, Department of
+  Physics, Kyoto University}
+\cvrow{2025.12}{\textbf{Determination of nuclear deformations with an emulator for sub-barrier
+  fusion reactions} \textperiodcentered\ 10th Kansai Nuclear Multi-Body Seminar, Osaka Metropolitan
+  University, Japan}
+\cvrow{2024.11}{\textbf{Angular distribution in the multinucleon transfer reaction}
+  \textperiodcentered\ 3rd Symposium on Nuclear Physics in the Guangdong--Hong Kong--Macao Greater
+  Bay Area, Shenzhen, China}
+\cvrow{2024.10}{\textbf{Angular distribution in the multinucleon transfer reaction}
+  \textperiodcentered\ 2nd Multinucleon Transfer Reactions Symposium, Changsha, China}
+%---------------------------------------------------------
+
+\section*{Open Source \& Research Software}
+\textbf{Coupled-channels model \& emulator:} Fortran 90 / Python solver for heavy-ion fusion
+coupled-channels calculations and reduced-basis emulator development; includes a rewrite of
+CCFULL and multiple numerical solution methods.
+\href{https://github.com/murry-liao/CCFULL_ReduceBasisMethod_Emulator}{Project repository}\\[3pt]
+\textbf{Nuclear potential \& mass calculations:} Fortran program for Coulomb-barrier and
+potential-energy-surface description; other in-house codes include the dinuclear system model,
+FRLDM, and TCSM.
+\href{https://murry-liao.github.io/file_code/}{Project repository}
+%---------------------------------------------------------
+
+\newpage
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[R]{\footnotesize\color{muted} ZEHONG LIAO \ /\ ACADEMIC CV \ /\ 2026}
+\fancyfoot[C]{\footnotesize\color{muted} Zehong Liao \textbar\ murry-liao.github.io \ \textperiodcentered\ \ \thepage}
+
+%---------------------------------------------------------
+\section*{Representative Publications}
+\textit{13 publications in total; 6 first-author papers and 2 representative collaborative works
+are listed below.}
+\vspace{5pt}
+
+\cvnum{01}{\textbf{Determination of nuclear deformations with an emulator for sub-barrier fusion
+  reactions} \textcolor{accent}{[First Author]}\\
+  Zehong Liao, K. Hagino, Long Zhu, S. Yoshida, K. Uzawa. Phys. Rev. C \textbf{113}, 044611 (2026).
+  \textperiodcentered\ \href{https://journals.aps.org/prc/abstract/10.1103/8ycb-lrqq}{DOI}}
+
+\cvnum{02}{\textbf{Mechanism of the quasielastic scattering based on the dinuclear system concept}
+  \textcolor{accent}{[First Author \textperiodcentered\ Letter]}\\
+  Zehong Liao, Yu Yang, Zepeng Gao, Jun Su, Long Zhu. Phys. Rev. C \textbf{112}, L051601 (2025).
+  \textperiodcentered\ \href{https://doi.org/10.1103/yfkd-w7gs}{DOI}}
+
+\cvnum{03}{\textbf{Quantifying angular distributions in multinucleon transfer reactions with a
+  semiclassical method} \textcolor{accent}{[First Author]}\\
+  Zehong Liao et al. Phys. Rev. C \textbf{111}, 024605 (2025).
+  \textperiodcentered\ \href{https://journals.aps.org/prc/abstract/10.1103/PhysRevC.111.024605}{DOI}}
+
+\cvnum{04}{\textbf{Shell effects on the drift and fluctuation in multinucleon transfer reactions}
+  \textcolor{accent}{[First Author]}\\
+  Zehong Liao et al. Phys. Rev. C \textbf{109}, 054612 (2024).
+  \textperiodcentered\ \href{https://journals.aps.org/prc/abstract/10.1103/PhysRevC.109.054612}{DOI}}
+
+\cvnum{05}{\textbf{Optimal detection angles for producing $N=126$ neutron-rich isotones in
+  multinucleon transfer reactions} \textcolor{accent}{[First Author \textperiodcentered\ Letter]}\\
+  Zehong Liao et al. Phys. Rev. Research \textbf{5}, L022021 (2023).
+  \textperiodcentered\ \href{https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.5.L022021}{DOI}}
+
+\cvnum{06}{\textbf{Dynamics of charge equilibration and effects on producing neutron-rich isotopes
+  around $N=126$ in multinucleon transfer reactions} \textcolor{accent}{[First Author]}\\
+  Zehong Liao et al. Phys. Rev. C \textbf{107}, 014614 (2023).
+  \textperiodcentered\ \href{https://journals.aps.org/prc/abstract/10.1103/PhysRevC.107.014614}{DOI}}
+
+\cvnum{07}{\textbf{Correlation of multiple physical quantities in multinucleon transfer reactions:
+  insight into production of isotopes near the shell closure $N=152$}
+  \textcolor{accent}{[Co-author \textperiodcentered\ Editors' Suggestion]}\\
+  Zimeng Shen, Zehong Liao, Long Zhu. Phys. Rev. C \textbf{113}, L021601 (2026).
+  \textperiodcentered\ \href{https://doi.org/10.1103/xbtz-bvmc}{DOI}}
+
+\cvnum{08}{\textbf{Emulating multichannel scattering based on eigenvector continuation in the
+  discrete-basis formalism} \textcolor{accent}{[Co-author]}\\
+  K. Hagino, Zehong Liao, S. Yoshida, M. Kimura, K. Uzawa. Phys. Rev. C \textbf{112}, 024618 (2025).
+  \textperiodcentered\ \href{https://journals.aps.org/prc/abstract/10.1103/zpsz-7jld}{DOI}}
+
+%---------------------------------------------------------
+
+
+
+\end{document}
